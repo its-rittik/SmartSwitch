@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Switch Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'dark': '#0a0a0a',
+                        'card': '#1a1a1a',
+                        'border': '#2a2a2a',
+                        'accent': '#3b82f6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .switch-button {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .switch-button.off {
+            background: #374151;
+        }
+
+        .switch-button.on {
+            background: linear-gradient(45deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .switch-knob {
+            position: absolute;
+            top: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch-button.off .switch-knob {
+            left: 3px;
+        }
+
+        .switch-button.on .switch-knob {
+            left: 33px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #374151;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .timer-toggle {
+            display: inline-flex;
+            background: #374151;
+            border-radius: 20px;
+            padding: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .timer-option {
+            padding: 6px 12px;
+            border-radius: 18px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #9ca3af;
+        }
+
+        .timer-option.active {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-offline {
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        .status-connecting {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+
+<body class="text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1
+                class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-4">
+                Smart Switch Dashboard
+            </h1>
+            <div class="flex justify-center items-center space-x-6 text-sm">
+                <div class="flex items-center">
+                    <span id="connection-dot" class="status-dot status-connecting"></span>
+                    <span id="connection-text">Connecting...</span>
+                </div>
+                <div class="flex items-center">
+                    <span id="device-dot" class="status-dot status-offline"></span>
+                    <span id="device-text">Device Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device Controls -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+            <!-- Fan Control -->
+            <div class="glass-card rounded-2xl p-6 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Fan</h3>
+                        <p class="text-sm text-gray-400">Living Room</p>
+                    </div>
+                    <div class="switch-button off" id="fan-switch" onclick="toggleDevice('sw1', 'fan')">
+                        <div class="switch-knob"></div>
+                    </div>
+                </div>
+
+                <!-- Speed Control -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-gray-300">Speed</label>
+                        <span id="fan-speed-display" class="text-sm text-blue-400">Medium</span>
+                    </div>
+                    <input id="fan-speed-slider" type="range" min="1" max="3" value="2" class="slider w-full"
+                        oninput="updateSpeedDisplay('fan', this.value)" onchange="setFanSpeed('sw1', this.value)">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Low</span>
+                        <span>Med</span>
+                        <span>High</span>
+                    </div>
+                </div>
+
+                <!-- Quick Timer -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-gray-300">Quick Timer</label>
+                        <div class="timer-toggle" id="fan-timer-toggle">
+                            <div class="timer-option active" onclick="setTimerAction('fan', 'off')">OFF</div>
+                            <div class="timer-option" onclick="setTimerAction('fan', 'on')">ON</div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input id="fan-timer-slider" type="range" min="0" max="120" value="0" class="slider w-full"
+                            oninput="updateQuickTimerDisplay('fan', this.value)" onchange="setQuickTimer('sw1', 'fan')">
+                        <div id="fan-timer-bubble"
+                            class="absolute -top-8 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded opacity-0 transition-all duration-200 pointer-events-none z-10">
+                            0m
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Off</span>
+                        <span>60m</span>
+                        <span>120m</span>
+                    </div>
+                    <div id="fan-timer-countdown" class="text-center text-sm text-green-400 font-mono mt-2"></div>
+                </div>
+
+                <!-- Multi Timers -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm text-gray-300">Multi Timers</label>
+                        <button onclick="addMultiTimer('sw1', 'fan')"
+                            class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full text-xs hover:shadow-lg transition-all">
+                            + Add
+                        </button>
+                    </div>
+                    <div id="fan-multi-timers" class="space-y-2 max-h-24 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Main Light Control -->
+            <div class="glass-card rounded-2xl p-6 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Main Light</h3>
+                        <p class="text-sm text-gray-400">Opposite of Table</p>
+                    </div>
+                    <div class="switch-button off" id="mainlight-switch" onclick="toggleDevice('sw3', 'mainlight')">
+                        <div class="switch-knob"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Timer -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-gray-300">Quick Timer</label>
+                        <div class="timer-toggle" id="mainlight-timer-toggle">
+                            <div class="timer-option active" onclick="setTimerAction('mainlight', 'off')">OFF</div>
+                            <div class="timer-option" onclick="setTimerAction('mainlight', 'on')">ON</div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input id="mainlight-timer-slider" type="range" min="0" max="120" value="0"
+                            class="slider w-full" oninput="updateQuickTimerDisplay('mainlight', this.value)"
+                            onchange="setQuickTimer('sw3', 'mainlight')">
+                        <div id="mainlight-timer-bubble"
+                            class="absolute -top-8 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded opacity-0 transition-all duration-200 pointer-events-none z-10">
+                            0m
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Off</span>
+                        <span>60m</span>
+                        <span>120m</span>
+                    </div>
+                    <div id="mainlight-timer-countdown" class="text-center text-sm text-green-400 font-mono mt-2"></div>
+                </div>
+
+                <!-- Multi Timers -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm text-gray-300">Multi Timers</label>
+                        <button onclick="addMultiTimer('sw3', 'mainlight')"
+                            class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full text-xs hover:shadow-lg transition-all">
+                            + Add
+                        </button>
+                    </div>
+                    <div id="mainlight-multi-timers" class="space-y-2 max-h-24 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Desk Light Control -->
+            <div class="glass-card rounded-2xl p-6 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-white">Desk Light</h3>
+                        <p class="text-sm text-gray-400">Beside Table</p>
+                    </div>
+                    <div class="switch-button off" id="desklight-switch" onclick="toggleDevice('sw4', 'desklight')">
+                        <div class="switch-knob"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Timer -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-gray-300">Quick Timer</label>
+                        <div class="timer-toggle" id="desklight-timer-toggle">
+                            <div class="timer-option active" onclick="setTimerAction('desklight', 'off')">OFF</div>
+                            <div class="timer-option" onclick="setTimerAction('desklight', 'on')">ON</div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input id="desklight-timer-slider" type="range" min="0" max="120" value="0"
+                            class="slider w-full" oninput="updateQuickTimerDisplay('desklight', this.value)"
+                            onchange="setQuickTimer('sw4', 'desklight')">
+                        <div id="desklight-timer-bubble"
+                            class="absolute -top-8 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded opacity-0 transition-all duration-200 pointer-events-none z-10">
+                            0m
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Off</span>
+                        <span>60m</span>
+                        <span>120m</span>
+                    </div>
+                    <div id="desklight-timer-countdown" class="text-center text-sm text-green-400 font-mono mt-2"></div>
+                </div>
+
+                <!-- Multi Timers -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm text-gray-300">Multi Timers</label>
+                        <button onclick="addMultiTimer('sw4', 'desklight')"
+                            class="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full text-xs hover:shadow-lg transition-all">
+                            + Add
+                        </button>
+                    </div>
+                    <div id="desklight-multi-timers" class="space-y-2 max-h-24 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time-Based Scheduling -->
+        <div class="glass-card rounded-2xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-white">Scheduled Actions</h3>
+                <button onclick="addSchedule()"
+                    class="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full text-sm hover:shadow-lg transition-all">
+                    + Add Schedule
+                </button>
+            </div>
+            <div id="schedules-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Debug Panel (Collapsible) -->
+        <div class="glass-card rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="toggleDebug()">
+                <h4 class="text-lg font-semibold text-white">Debug Info</h4>
+                <span id="debug-arrow" class="text-gray-400 transition-transform">▼</span>
+            </div>
+            <div id="debug-panel" class="hidden">
+                <div id="debug-log"
+                    class="text-xs text-gray-400 font-mono max-h-32 overflow-y-auto bg-black bg-opacity-30 rounded p-3">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>
