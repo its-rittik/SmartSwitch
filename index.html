@@ -391,6 +391,23 @@
                 <span id="debug-arrow" class="text-gray-400 transition-transform">▼</span>
             </div>
             <div id="debug-panel" class="hidden">
+                <!-- Connection Settings -->
+                <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+                    <h5 class="text-sm font-semibold text-white mb-2">Connection Settings</h5>
+                    <div class="flex items-center space-x-2 mb-2">
+                        <input id="bridge-url-input" type="text"
+                            placeholder="ws://localhost:8766 or wss://your-ngrok.io"
+                            class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm">
+                        <button onclick="updateBridgeURL()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                            Update
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        Current: <span id="current-bridge-url" class="text-blue-400"></span>
+                    </div>
+                </div>
+
                 <div id="debug-log"
                     class="text-xs text-gray-400 font-mono max-h-32 overflow-y-auto bg-black bg-opacity-30 rounded p-3">
                 </div>

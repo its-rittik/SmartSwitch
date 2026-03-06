@@ -1,10 +1,41 @@
 // Smart Switch Dashboard - With Local Storage Persistence
 
-// Configuration for remote access
-const BRIDGE_URL = window.location.hostname === 'localhost'
-    ? 'ws://localhost:8766'  // Local development
-    : 'wss://your-domain.com:8766';  // Remote access (secure WebSocket)
+// Configuration for both local and remote access
+const getWebSocketURL = () => {
+    const isLocal = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '';
 
+    if (isLocal) {
+        return 'ws://localhost:8766';  // Local development
+    } else {
+        // For remote hosting, you need to provide your bridge URL
+        // Check if we have a saved URL first
+        const savedURL = localStorage.getItem('bridge_url');
+        if (savedURL) {
+            return savedURL;
+        }
+
+        // Prompt user for their bridge URL
+        const remoteURL = prompt(
+            'Enter your bridge WebSocket URL:\n\n' +
+            'Examples:\n' +
+            '• Ngrok: wss://abc123.ngrok.io\n' +
+            '• Your IP: ws://192.168.1.100:8766\n' +
+            '• Cloud: wss://your-app.herokuapp.com\n\n' +
+            'Leave empty to use localhost:'
+        );
+
+        if (remoteURL) {
+            localStorage.setItem('bridge_url', remoteURL);
+            return remoteURL;
+        } else {
+            return 'ws://localhost:8766';  // Fallback
+        }
+    }
+};
+
+const BRIDGE_URL = getWebSocketURL();
 const CONTROL_TOPIC = 'SmartSwitch/SUB/9999112512080003';
 const ACK_TOPIC = 'SmartSwitch/ACK';
 const HEARTBEAT_TOPIC = 'SmartSwitch/HB';
@@ -210,6 +241,9 @@ function loadAllFromStorage() {
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function () {
     debugLog('🚀 Starting Smart Switch Dashboard with Persistence...');
+
+    // Show current bridge URL in debug panel
+    updateBridgeURLDisplay();
 
     // Load saved data first
     loadAllFromStorage();
@@ -913,3 +947,52 @@ window.clearStorage = function () {
     debugLog('🗑️ Cleared all saved data');
     location.reload();
 };
+// Upda
+te bridge URL display
+function updateBridgeURLDisplay() {
+    const currentUrlElement = document.getElementById('current-bridge-url');
+    const inputElement = document.getElementById('bridge-url-input');
+
+    if (currentUrlElement) {
+        currentUrlElement.textContent = BRIDGE_URL;
+    }
+    if (inputElement) {
+        inputElement.value = BRIDGE_URL;
+    }
+}
+
+// Update bridge URL and reconnect
+function updateBridgeURL() {
+    const inputElement = document.getElementById('bridge-url-input');
+    const newURL = inputElement.value.trim();
+
+    if (!newURL) {
+        debugLog('❌ Please enter a valid WebSocket URL');
+        return;
+    }
+
+    // Validate URL format
+    if (!newURL.startsWith('ws://') && !newURL.startsWith('wss://')) {
+        debugLog('❌ URL must start with ws:// or wss://');
+        return;
+    }
+
+    // Save new URL
+    localStorage.setItem('bridge_url', newURL);
+    debugLog(`🔄 Bridge URL updated to: ${newURL}`);
+
+    // Close existing connection
+    if (bridgeSocket) {
+        bridgeSocket.close();
+    }
+
+    // Update global variable (for next connection)
+    window.BRIDGE_URL = newURL;
+    updateBridgeURLDisplay();
+
+    // Reconnect with new URL
+    setTimeout(() => {
+        debugLog('🔄 Reconnecting with new URL...');
+        initBridge();
+    }, 1000);
+}
