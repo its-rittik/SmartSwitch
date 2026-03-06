@@ -1,0 +1,1 @@
+web: python remote_bridge.py

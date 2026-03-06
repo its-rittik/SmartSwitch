@@ -1,7 +1,10 @@
 // Smart Switch Dashboard - With Local Storage Persistence
 
-// Configuration
-const BRIDGE_URL = 'ws://localhost:8766';
+// Configuration for remote access
+const BRIDGE_URL = window.location.hostname === 'localhost'
+    ? 'ws://localhost:8766'  // Local development
+    : 'wss://your-domain.com:8766';  // Remote access (secure WebSocket)
+
 const CONTROL_TOPIC = 'SmartSwitch/SUB/9999112512080003';
 const ACK_TOPIC = 'SmartSwitch/ACK';
 const HEARTBEAT_TOPIC = 'SmartSwitch/HB';
