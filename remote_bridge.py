@@ -78,7 +78,7 @@ def start_mqtt():
             time.sleep(5)
 
 
-async def handle_client(websocket):
+async def handle_client(websocket, request=None):
     websocket_clients.add(websocket)
     logger.info(f"WebSocket client connected: {websocket.remote_address}")
 
@@ -165,12 +165,8 @@ async def main():
     forwarder = asyncio.create_task(message_forwarder())
 
     logger.info(f"WebSocket server on port {WEBSOCKET_PORT}")
-    async with websockets.serve(
-        handle_client,
-        HOST,
-        WEBSOCKET_PORT,
-        extra_headers={'Access-Control-Allow-Origin': '*'}
-    ):
+
+    async with websockets.serve(handle_client, HOST, WEBSOCKET_PORT):
         logger.info(f"Bridge running — frontend: http://0.0.0.0:{HTTP_PORT}, ws: ws://0.0.0.0:{WEBSOCKET_PORT}")
         try:
             await asyncio.Future()
