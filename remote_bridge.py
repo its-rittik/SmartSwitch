@@ -120,14 +120,15 @@ async def handle_client(websocket, request=None):
 
 
 async def message_forwarder():
+    global websocket_clients, mqtt_messages
     while True:
         try:
             if mqtt_messages and websocket_clients:
-                messages_to_send = mqtt_messages.copy()
-                mqtt_messages.clear()
+                messages_to_send = mqtt_messages[:]
+                del mqtt_messages[:]
                 dead = set()
                 for msg in messages_to_send:
-                    for client in websocket_clients.copy():
+                    for client in list(websocket_clients):
                         try:
                             await client.send(json.dumps(msg))
                         except Exception:
@@ -141,11 +142,16 @@ async def message_forwarder():
 
 def start_http_server():
     """Serve static files (index.html, dashboard.js) from current directory"""
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    handler = SimpleHTTPRequestHandler
-    handler.log_message = lambda *args: None  # suppress access logs
-    server = HTTPServer((HOST, HTTP_PORT), handler)
-    logger.info(f"HTTP server on port {HTTP_PORT}")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    class Handler(SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=base_dir, **kwargs)
+        def log_message(self, format, *args):
+            pass  # suppress access logs
+
+    server = HTTPServer((HOST, HTTP_PORT), Handler)
+    logger.info(f"HTTP server on port {HTTP_PORT} serving {base_dir}")
     server.serve_forever()
 
 
