@@ -2,37 +2,10 @@
 
 // Configuration for both local and remote access
 const getWebSocketURL = () => {
-    const isLocal = window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.hostname === '';
-
-    if (isLocal) {
-        return 'ws://localhost:8766';  // Local development
-    } else {
-        // For remote hosting, you need to provide your bridge URL
-        // Check if we have a saved URL first
-        const savedURL = localStorage.getItem('bridge_url');
-        if (savedURL) {
-            return savedURL;
-        }
-
-        // Prompt user for their bridge URL
-        const remoteURL = prompt(
-            'Enter your bridge WebSocket URL:\n\n' +
-            'Examples:\n' +
-            '• Ngrok: wss://abc123.ngrok.io\n' +
-            '• Your IP: ws://192.168.1.100:8766\n' +
-            '• Cloud: wss://your-app.herokuapp.com\n\n' +
-            'Leave empty to use localhost:'
-        );
-
-        if (remoteURL) {
-            localStorage.setItem('bridge_url', remoteURL);
-            return remoteURL;
-        } else {
-            return 'ws://localhost:8766';  // Fallback
-        }
-    }
+    // Use same host as the page, port 8766 for WebSocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname || 'localhost';
+    return `${protocol}//${host}:8766`;
 };
 
 const BRIDGE_URL = getWebSocketURL();
@@ -947,8 +920,7 @@ window.clearStorage = function () {
     debugLog('🗑️ Cleared all saved data');
     location.reload();
 };
-// Upda
-te bridge URL display
+// Update bridge URL display
 function updateBridgeURLDisplay() {
     const currentUrlElement = document.getElementById('current-bridge-url');
     const inputElement = document.getElementById('bridge-url-input');
